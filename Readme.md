@@ -76,3 +76,85 @@ docker run -d -p 80:80 your-project-name
 - **生产环境**：在生产环境中，建议使用 `docker-compose` 或 Kubernetes 等工具进行容器编排，以便更好地管理和扩展应用。
 
 有关 Docker 的更多信息，请参考 [Docker 官方文档](https://docs.docker.com/)。
+
+
+
+To deploy this project using Docker, follow the detailed steps below:
+
+**1. Build the Docker Image**
+
+First, create a file named `Dockerfile` in the root directory of your project with the following content:
+
+
+```dockerfile
+# Use the official Node.js image as the base image for the build stage
+FROM node:lts-alpine AS build-stage
+
+# Set the working directory
+WORKDIR /app
+
+# Copy package.json and package-lock.json (if available)
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy all project files to the working directory
+COPY . .
+
+# Build the project
+RUN npm run build
+
+# Use the official Nginx image as the base image for the production stage
+FROM nginx:stable-alpine AS production-stage
+
+# Copy the built files from the previous stage to Nginx's default static directory
+COPY --from=build-stage /app/dist /usr/share/nginx/html
+
+# Expose port 80
+EXPOSE 80
+
+# Start Nginx
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+
+Then, open a terminal, navigate to the project's root directory, and run the following command to build the Docker image:
+
+
+```bash
+docker build -t your-project-name .
+```
+
+
+Replace `your-project-name` with your desired image name.
+
+**2. Run the Docker Container**
+
+After building the image, start a container with the following command:
+
+
+```bash
+docker run -d -p 80:80 your-project-name
+```
+
+
+This command runs the container in detached mode, mapping port 80 of the container to port 80 of the host machine. You can access the application in your browser at `http://localhost`.
+
+**Notes**
+
+- **Port Conflicts**: If port 80 on the host machine is already in use, map a different port by modifying the `-p` flag. For example, to map port 8080 on the host to port 80 on the container:
+
+  
+```bash
+  docker run -d -p 8080:80 your-project-name
+  ```
+
+
+  Then, access the application at `http://localhost:8080`.
+
+- **Data Persistence**: To persist data outside of the container, consider using Docker volumes or bind mounts to link directories on the host machine to directories in the container.
+
+- **Production Environment**: For production deployments, it's advisable to use orchestration tools like `docker-compose` or Kubernetes to manage and scale your application effectively.
+
+For more information on Docker, refer to the [official Docker documentation](https://docs.docker.com/). 
